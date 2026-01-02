@@ -110,11 +110,12 @@ export default function App() {
           {/* Header Section */}
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <img 
-                src={exampleImage} 
-                alt="User avatar"
-                className="w-14 h-14 rounded-full object-cover"
-              />
+              <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </div>
               <div>
                 <h2 className="text-gray-800">Hey, {user.name}!</h2>
                 <p className="text-sm text-gray-500">{user.phone}</p>

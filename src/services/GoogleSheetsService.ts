@@ -49,10 +49,28 @@ class GoogleSheetsService {
 
   async checkUserExists(phone: string): Promise<boolean> {
     try {
+      // Debug: Log the API call details
+      console.log('Checking user existence with API call:');
+      console.log('Spreadsheet ID:', this.SPREADSHEET_ID);
+      console.log('Sheet:', GOOGLE_SHEETS_CONFIG.SHEETS.USERS);
+      console.log('Column mapping:', GOOGLE_SHEETS_CONFIG.COLUMN_MAPPINGS.USERS.PHONE);
+      console.log('API Key available:', !!this.API_KEY);
+      console.log('Full URL:', `${GOOGLE_SHEETS_CONFIG.API_BASE_URL}/${this.SPREADSHEET_ID}/values/${GOOGLE_SHEETS_CONFIG.SHEETS.USERS}!${GOOGLE_SHEETS_CONFIG.COLUMN_MAPPINGS.USERS.PHONE}2:${GOOGLE_SHEETS_CONFIG.COLUMN_MAPPINGS.USERS.PHONE}?key=${this.API_KEY ? '***HIDDEN***' : 'MISSING'}`);
+      
+      // Check if the expected sheet exists by first getting spreadsheet info
+      const sheetExists = await this.verifySheetExists(GOOGLE_SHEETS_CONFIG.SHEETS.USERS);
+      if (!sheetExists) {
+        console.warn(`Sheet "${GOOGLE_SHEETS_CONFIG.SHEETS.USERS}" does not exist. Using fallback behavior.`);
+        return false;
+      }
+      
       // Fetch all users from the Users sheet
       const response = await fetch(
         `${GOOGLE_SHEETS_CONFIG.API_BASE_URL}/${this.SPREADSHEET_ID}/values/${GOOGLE_SHEETS_CONFIG.SHEETS.USERS}!${GOOGLE_SHEETS_CONFIG.COLUMN_MAPPINGS.USERS.PHONE}2:${GOOGLE_SHEETS_CONFIG.COLUMN_MAPPINGS.USERS.PHONE}?key=${this.API_KEY}`
       );
+      
+      console.log('Response status:', response.status);
+      console.log('Response status text:', response.statusText);
       
       if (!response.ok) {
         // Handle authentication errors gracefully
@@ -60,14 +78,22 @@ class GoogleSheetsService {
           console.warn('Read operations require proper authentication. Assuming user does not exist.');
           return false;
         }
+        // For 400 errors, get more details
+        if (response.status === 400) {
+          const errorText = await response.text();
+          console.error('Bad Request details:', errorText);
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
+      console.log('User data fetched successfully:', data);
       const phoneValues = data.values || [];
       
       // Check if the phone number exists in the list
-      return phoneValues.some((row: string[]) => row[0] === phone);
+      const exists = phoneValues.some((row: string[]) => row[0] === phone);
+      console.log('User exists result:', exists);
+      return exists;
     } catch (error) {
       console.error('Error checking user existence:', error);
       // In case of error, assume user doesn't exist to prevent blocking
@@ -86,6 +112,21 @@ class GoogleSheetsService {
         ]
       ];
 
+      // Check if the expected sheet exists before attempting write
+      const sheetExists = await this.verifySheetExists(GOOGLE_SHEETS_CONFIG.SHEETS.USERS);
+      if (!sheetExists) {
+        console.warn(`Sheet "${GOOGLE_SHEETS_CONFIG.SHEETS.USERS}" does not exist. Cannot add user.`);
+        return;
+      }
+
+      // Debug: Log the API call details
+      console.log('Adding user to sheet with API call:');
+      console.log('Spreadsheet ID:', this.SPREADSHEET_ID);
+      console.log('Sheet:', GOOGLE_SHEETS_CONFIG.SHEETS.USERS);
+      console.log('API Key available:', !!this.API_KEY);
+      console.log('Data to insert:', values);
+      console.log('Full URL:', `${GOOGLE_SHEETS_CONFIG.API_BASE_URL}/${this.SPREADSHEET_ID}/values/${GOOGLE_SHEETS_CONFIG.SHEETS.USERS}!A1:append?valueInputOption=USER_ENTERED&key=${this.API_KEY ? '***HIDDEN***' : 'MISSING'}`);
+
       // Use Google Sheets API to append the user data
       // Note: API key authentication only works for public sheets and read operations
       // For write operations, we need OAuth 2.0 or service account
@@ -102,12 +143,20 @@ class GoogleSheetsService {
         }
       );
 
+      console.log('Add user response status:', response.status);
+      console.log('Add user response status text:', response.statusText);
+
       if (!response.ok) {
         // Handle specific error codes
         if (response.status === 401 || response.status === 403) {
           console.warn('Write operations require proper authentication. Using fallback.');
           // Fallback: don't throw error, just warn - user can still proceed
           return;
+        }
+        // For 400 errors, get more details
+        if (response.status === 400) {
+          const errorText = await response.text();
+          console.error('Bad Request details for user add:', errorText);
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -147,6 +196,21 @@ class GoogleSheetsService {
         ]
       ];
 
+      // Check if the expected sheet exists before attempting write
+      const sheetExists = await this.verifySheetExists(GOOGLE_SHEETS_CONFIG.SHEETS.TRANSACTIONS);
+      if (!sheetExists) {
+        console.warn(`Sheet "${GOOGLE_SHEETS_CONFIG.SHEETS.TRANSACTIONS}" does not exist. Cannot add transaction.`);
+        return;
+      }
+
+      // Debug: Log the API call details
+      console.log('Adding transaction to sheet with API call:');
+      console.log('Spreadsheet ID:', this.SPREADSHEET_ID);
+      console.log('Sheet:', GOOGLE_SHEETS_CONFIG.SHEETS.TRANSACTIONS);
+      console.log('API Key available:', !!this.API_KEY);
+      console.log('Data to insert:', values);
+      console.log('Full URL:', `${GOOGLE_SHEETS_CONFIG.API_BASE_URL}/${this.SPREADSHEET_ID}/values/${GOOGLE_SHEETS_CONFIG.SHEETS.TRANSACTIONS}!A1:append?valueInputOption=USER_ENTERED&key=${this.API_KEY ? '***HIDDEN***' : 'MISSING'}`);
+
       // Use Google Sheets API to append the transaction data
       // Note: API key authentication only works for public sheets and read operations
       // For write operations, we need OAuth 2.0 or service account
@@ -163,12 +227,20 @@ class GoogleSheetsService {
         }
       );
 
+      console.log('Add transaction response status:', response.status);
+      console.log('Add transaction response status text:', response.statusText);
+
       if (!response.ok) {
         // Handle specific error codes
         if (response.status === 401 || response.status === 403) {
           console.warn('Write operations require proper authentication. Using fallback.');
           // Fallback: don't throw error, just warn - user can still proceed
           return;
+        }
+        // For 400 errors, get more details
+        if (response.status === 400) {
+          const errorText = await response.text();
+          console.error('Bad Request details for transaction add:', errorText);
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -184,11 +256,62 @@ class GoogleSheetsService {
 
   async getTransactions(user: User): Promise<Transaction[]> {
     try {
+      // Debug: Log the API call details
+      console.log('Fetching transactions with API call:');
+      console.log('Spreadsheet ID:', this.SPREADSHEET_ID);
+      console.log('Sheet:', GOOGLE_SHEETS_CONFIG.SHEETS.TRANSACTIONS);
+      console.log('API Key available:', !!this.API_KEY);
+      console.log('Full URL:', `${GOOGLE_SHEETS_CONFIG.API_BASE_URL}/${this.SPREADSHEET_ID}/values/${GOOGLE_SHEETS_CONFIG.SHEETS.TRANSACTIONS}!A1:G?key=${this.API_KEY ? '***HIDDEN***' : 'MISSING'}`);
+      
+      // Check if the expected sheet exists by first getting spreadsheet info
+      const sheetExists = await this.verifySheetExists(GOOGLE_SHEETS_CONFIG.SHEETS.TRANSACTIONS);
+      if (!sheetExists) {
+        console.warn(`Sheet "${GOOGLE_SHEETS_CONFIG.SHEETS.TRANSACTIONS}" does not exist. Returning mock data.`);
+        // Return mock data in case of missing sheet
+        return [
+          {
+            id: 1,
+            date: '1 Jan 2026',
+            day: 'Malam Jumat',
+            name: user.name,
+            amount: 23000,
+            type: 'masuk'
+          },
+          {
+            id: 2,
+            date: '31 Des 2025',
+            day: 'Malam Kamis',
+            name: user.name,
+            amount: 19000,
+            type: 'masuk'
+          },
+          {
+            id: 3,
+            date: '31 Des 2025',
+            day: 'Malam Kamis',
+            name: user.name,
+            amount: 15000,
+            type: 'keluar'
+          },
+          {
+            id: 4,
+            date: '30 Des 2025',
+            day: 'Malam Rabu',
+            name: user.name,
+            amount: 30000,
+            type: 'masuk'
+          }
+        ];
+      }
+
       // Fetch transactions for the specific user
       // First, get all transactions
       const response = await fetch(
         `${GOOGLE_SHEETS_CONFIG.API_BASE_URL}/${this.SPREADSHEET_ID}/values/${GOOGLE_SHEETS_CONFIG.SHEETS.TRANSACTIONS}!A1:G?key=${this.API_KEY}`
       );
+      
+      console.log('Response status:', response.status);
+      console.log('Response status text:', response.statusText);
       
       if (!response.ok) {
         // Handle authentication errors gracefully
@@ -230,10 +353,16 @@ class GoogleSheetsService {
             }
           ];
         }
+        // For 400 errors, get more details
+        if (response.status === 400) {
+          const errorText = await response.text();
+          console.error('Bad Request details:', errorText);
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
+      console.log('Transaction data fetched successfully:', data);
       const rows = data.values || [];
       
       // Filter transactions for the current user based on phone number
@@ -251,6 +380,7 @@ class GoogleSheetsService {
         })
         .reverse(); // Reverse to show newest first
       
+      console.log('User transactions filtered:', userTransactions);
       return userTransactions;
     } catch (error) {
       console.error('Error fetching transactions:', error);
@@ -289,6 +419,35 @@ class GoogleSheetsService {
           type: 'masuk'
         }
       ];
+    }
+  }
+
+  // Helper method to verify if a sheet exists in the spreadsheet
+  private async verifySheetExists(sheetName: string): Promise<boolean> {
+    try {
+      // Get spreadsheet metadata to check if the sheet exists
+      const response = await fetch(
+        `${GOOGLE_SHEETS_CONFIG.API_BASE_URL}/${this.SPREADSHEET_ID}?key=${this.API_KEY}`
+      );
+      
+      if (!response.ok) {
+        console.error(`Failed to get spreadsheet metadata: ${response.status} ${response.statusText}`);
+        return false;
+      }
+      
+      const spreadsheetData = await response.json();
+      const sheetNames = spreadsheetData.sheets?.map((sheet: any) => sheet.properties.title) || [];
+      
+      console.log(`Available sheets in spreadsheet:`, sheetNames);
+      console.log(`Looking for sheet: ${sheetName}`);
+      
+      const exists = sheetNames.includes(sheetName);
+      console.log(`Sheet "${sheetName}" exists:`, exists);
+      
+      return exists;
+    } catch (error) {
+      console.error(`Error verifying sheet existence:`, error);
+      return false;
     }
   }
 }

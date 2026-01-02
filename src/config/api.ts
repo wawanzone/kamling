@@ -10,10 +10,10 @@ export const GOOGLE_SHEETS_CONFIG = {
   
   // Sheet names in your Google Sheets document
   // Note: Make sure these sheets exist in your Google Spreadsheet
-  // Based on our testing, the spreadsheet has "Sheet1" and "Sheet2"
+  // Based on our testing, the spreadsheet has "Users" and "Transactions"
   SHEETS: {
-    USERS: 'Sheet1', // Sheet for storing user information (change this to match your actual sheet name)
-    TRANSACTIONS: 'Sheet2', // Sheet for storing transaction data (change this to match your actual sheet name)
+    USERS: 'Users', // Sheet for storing user information (change this to match your actual sheet name)
+    TRANSACTIONS: 'Transactions', // Sheet for storing transaction data (change this to match your actual sheet name)
   },
   
   // Column mappings for data storage

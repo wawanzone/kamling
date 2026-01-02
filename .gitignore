@@ -2,3 +2,8 @@
 # Backup files
 *.backup
 ```
+
+# ===============================
+# Dependencies
+# ===============================
+node_modules/

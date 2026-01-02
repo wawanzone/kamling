@@ -20,7 +20,7 @@ async function testReadOperation() {
   try {
     console.log('\n🔍 Testing read operation...');
     
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet1!A1:A?key=${API_KEY}`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Users!A1:A?key=${API_KEY}`;
     console.log('Request URL:', url);
     
     const response = await fetch(url);
@@ -47,7 +47,7 @@ async function testWriteOperation() {
   try {
     console.log('\n📝 Testing write operation...');
     
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet1!A1:append?valueInputOption=USER_ENTERED&key=${API_KEY}`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Users!A1:append?valueInputOption=USER_ENTERED&key=${API_KEY}`;
     console.log('Request URL:', url);
     
     const response = await fetch(url, {

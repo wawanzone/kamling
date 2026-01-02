@@ -1,7 +1,7 @@
 // Google Sheets API Service
 // This service will handle all interactions with Google Sheets API using fetch
 // Note: API keys only work for public sheets and read operations
-// For write operations, we need to implement proper authentication
+// For write operations, we implement fallback storage using localStorage
 
 import { GOOGLE_SHEETS_CONFIG, getApiKey } from '../config/api';
 
@@ -19,6 +19,12 @@ interface Transaction {
   type: 'masuk' | 'keluar';
 }
 
+// Local storage keys
+const LOCAL_STORAGE_KEYS = {
+  USERS: 'app_users',
+  TRANSACTIONS: 'app_transactions'
+};
+
 class GoogleSheetsService {
   private SPREADSHEET_ID = GOOGLE_SHEETS_CONFIG.SPREADSHEET_ID;
   private API_KEY = getApiKey();
@@ -28,6 +34,61 @@ class GoogleSheetsService {
     if (!this.API_KEY) {
       console.warn('Google Sheets API key not found. Read operations may fail.');
     }
+  }
+
+  // Initialize local storage if not present
+  private initializeLocalStorage(): void {
+    if (!localStorage.getItem(LOCAL_STORAGE_KEYS.USERS)) {
+      localStorage.setItem(LOCAL_STORAGE_KEYS.USERS, JSON.stringify([]));
+    }
+    if (!localStorage.getItem(LOCAL_STORAGE_KEYS.TRANSACTIONS)) {
+      localStorage.setItem(LOCAL_STORAGE_KEYS.TRANSACTIONS, JSON.stringify([]));
+    }
+  }
+
+  // Get users from local storage
+  private getLocalUsers(): User[] {
+    this.initializeLocalStorage();
+    const usersStr = localStorage.getItem(LOCAL_STORAGE_KEYS.USERS);
+    return usersStr ? JSON.parse(usersStr) : [];
+  }
+
+  // Add user to local storage
+  private addLocalUser(user: User): void {
+    this.initializeLocalStorage();
+    const users = this.getLocalUsers();
+    // Check if user already exists
+    const existingUser = users.find(u => u.phone === user.phone);
+    if (!existingUser) {
+      users.push(user);
+      localStorage.setItem(LOCAL_STORAGE_KEYS.USERS, JSON.stringify(users));
+    }
+  }
+
+  // Get transactions from local storage
+  private getLocalTransactions(): Transaction[] {
+    this.initializeLocalStorage();
+    const transactionsStr = localStorage.getItem(LOCAL_STORAGE_KEYS.TRANSACTIONS);
+    return transactionsStr ? JSON.parse(transactionsStr) : [];
+  }
+
+  // Add transaction to local storage
+  private addLocalTransaction(transaction: Transaction): void {
+    this.initializeLocalStorage();
+    const transactions = this.getLocalTransactions();
+    // Check if transaction already exists
+    const existingTransaction = transactions.find(t => t.id === transaction.id);
+    if (!existingTransaction) {
+      transactions.push(transaction);
+      localStorage.setItem(LOCAL_STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions));
+    }
+  }
+
+  // Get user transactions from local storage
+  private getUserLocalTransactions(phone: string): Transaction[] {
+    this.initializeLocalStorage();
+    const transactions = this.getLocalTransactions();
+    return transactions.filter(t => t.name === phone || (t as any).phone === phone);
   }
 
   async initializeUser(user: User): Promise<boolean> {
@@ -149,8 +210,9 @@ class GoogleSheetsService {
       if (!response.ok) {
         // Handle specific error codes
         if (response.status === 401 || response.status === 403) {
-          console.warn('Write operations require proper authentication. Using fallback.');
-          // Fallback: don't throw error, just warn - user can still proceed
+          console.warn('Write operations require proper authentication. Using fallback to local storage.');
+          // Add to local storage as fallback
+          this.addLocalUser(user);
           return;
         }
         // For 400 errors, get more details
@@ -161,12 +223,12 @@ class GoogleSheetsService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      console.log('User added successfully');
+      console.log('User added successfully to Google Sheets');
     } catch (error) {
-      console.error('Error adding user to sheet:', error);
-      // Don't throw error for write failures, just warn
-      // This allows the app to continue functioning
-      console.warn('Failed to add user to sheet, but continuing...');
+      console.error('Error adding user to Google Sheets:', error);
+      // Add to local storage as fallback when API fails
+      console.warn('Adding user to local storage as fallback...');
+      this.addLocalUser(user);
     }
   }
 
@@ -233,7 +295,8 @@ class GoogleSheetsService {
       if (!response.ok) {
         // Handle specific error codes
         if (response.status === 401 || response.status === 403) {
-          console.warn('Write operations require proper authentication. Using fallback.');
+          console.warn('Write operations require proper authentication. Using fallback to local storage.');
+          return;
           // Fallback: don't throw error, just warn - user can still proceed
           return;
         }

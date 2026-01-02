@@ -3,7 +3,7 @@
 
 export const GOOGLE_SHEETS_CONFIG = {
   // Your Google Sheets spreadsheet ID
-  SPREADSHEET_ID: '1MbjeDkD51X0fmr8D_pXvK28mpUq9MQ3IITnQtljTgYM',
+  SPREADSHEET_ID: import.meta.env.VITE_SPREADSHEET_ID || '1MbjeDkD51X0fmr8D_pXvK28mpUq9MQ3IITnQtljTgYM',
   
   // API endpoint configuration
   API_BASE_URL: 'https://sheets.googleapis.com/v4/spreadsheets',

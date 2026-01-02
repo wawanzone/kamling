@@ -25,6 +25,20 @@ export default function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Load transactions when user logs in
+  useEffect(() => {
+    const loadTransactions = async () => {
+      if (user) {
+        setLoading(true);
+        const userTransactions = await GoogleSheetsService.getTransactions(user);
+        setTransactions(userTransactions);
+        setLoading(false);
+      }
+    };
+    
+    loadTransactions();
+  }, [user]);
+
   const handleLogin = async (name: string, phone: string) => {
     const userObj = { name, phone };
     setUser(userObj);
@@ -41,20 +55,6 @@ export default function App() {
   if (!user) {
     return <Login onLogin={handleLogin} />;
   }
-
-  // Load transactions when user logs in
-  useEffect(() => {
-    const loadTransactions = async () => {
-      if (user) {
-        setLoading(true);
-        const userTransactions = await GoogleSheetsService.getTransactions(user);
-        setTransactions(userTransactions);
-        setLoading(false);
-      }
-    };
-    
-    loadTransactions();
-  }, [user]);
 
   // Mock data for totals
   const totalKamling = 4586000;

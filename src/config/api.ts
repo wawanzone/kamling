@@ -35,7 +35,9 @@ export const GOOGLE_SHEETS_CONFIG = {
 
 // Function to get API key - in a real app, this would come from environment variables
 export const getApiKey = (): string => {
-  // In a real application, you would get this from environment variables
-  // For now, return an empty string - this would need to be configured properly
-  return process.env.REACT_APP_GOOGLE_SHEETS_API_KEY || 'AIzaSyB5JFo6JcGj4we2WzaZWQ_1qO5d9dGAzdo';
+  // In Vite, environment variables need to be prefixed with VITE_
+  // For compatibility, we check both VITE_ and REACT_APP_ prefixes
+  return import.meta.env.VITE_GOOGLE_SHEETS_API_KEY || 
+         import.meta.env.REACT_APP_GOOGLE_SHEETS_API_KEY || 
+         '';
 };

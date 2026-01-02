@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LogOut, TrendingUp, TrendingDown, Plus, Minus } from 'lucide-react';
 import exampleImage from 'figma:asset/79031c485935095e720ea9f69b24c9432ddcb1b7.png';
+import Login from './Login';
+import GoogleSheetsService from '../services/GoogleSheetsService';
 
 interface Transaction {
   id: number;
@@ -11,58 +13,89 @@ interface Transaction {
   type: 'masuk' | 'keluar';
 }
 
+interface User {
+  name: string;
+  phone: string;
+}
+
 export default function App() {
+  const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<'masuk' | 'keluar'>('masuk');
   const [nominal, setNominal] = useState('');
   const [keterangan, setKeterangan] = useState('');
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data
+  const handleLogin = async (name: string, phone: string) => {
+    const userObj = { name, phone };
+    setUser(userObj);
+    
+    // Initialize user in Google Sheets
+    await GoogleSheetsService.initializeUser(userObj);
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+  };
+
+  // If user is not logged in, show login screen
+  if (!user) {
+    return <Login onLogin={handleLogin} />;
+  }
+
+  // Load transactions when user logs in
+  useEffect(() => {
+    const loadTransactions = async () => {
+      if (user) {
+        setLoading(true);
+        const userTransactions = await GoogleSheetsService.getTransactions(user);
+        setTransactions(userTransactions);
+        setLoading(false);
+      }
+    };
+    
+    loadTransactions();
+  }, [user]);
+
+  // Mock data for totals
   const totalKamling = 4586000;
   const lastMonthChange = 12.5; // percentage
   const totalMasuk = 2450000;
   const totalKeluar = 710000;
 
-  const transactions: Transaction[] = [
-    {
-      id: 1,
-      date: '1 Jan 2026',
-      day: 'Malam Jumat',
-      name: 'Ronald',
-      amount: 23000,
-      type: 'masuk'
-    },
-    {
-      id: 2,
-      date: '31 Des 2025',
-      day: 'Malam Kamis',
-      name: 'Alex',
-      amount: 19000,
-      type: 'masuk'
-    },
-    {
-      id: 3,
-      date: '31 Des 2025',
-      day: 'Malam Kamis',
-      name: 'Sarah',
-      amount: 15000,
-      type: 'keluar'
-    },
-    {
-      id: 4,
-      date: '30 Des 2025',
-      day: 'Malam Rabu',
-      name: 'Budi',
-      amount: 30000,
-      type: 'masuk'
+  const handleSave = async () => {
+    if (!nominal || !user) return;
+    
+    const amount = parseInt(nominal);
+    if (isNaN(amount) || amount <= 0) {
+      alert('Nominal harus berupa angka positif');
+      return;
     }
-  ];
-
-  const handleSave = () => {
-    if (!nominal) return;
-    // In a real app, this would save to backend
-    console.log('Saving:', { type: activeTab, nominal, keterangan });
-    setNominal('');
-    setKeterangan('');
+    
+    // Create transaction object
+    const newTransaction: Transaction = {
+      id: Date.now(), // Using timestamp as ID for now
+      date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+      day: new Date().toLocaleDateString('id-ID', { weekday: 'long' }),
+      name: user.name,
+      amount: amount,
+      type: activeTab
+    };
+    
+    // Save to Google Sheets
+    const success = await GoogleSheetsService.saveTransaction(newTransaction, user);
+    
+    if (success) {
+      // Add to local state
+      setTransactions(prev => [newTransaction, ...prev]);
+      // Clear form
+      setNominal('');
+      setKeterangan('');
+      console.log('Transaction saved successfully');
+    } else {
+      console.error('Failed to save transaction');
+      alert('Gagal menyimpan transaksi');
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -83,11 +116,14 @@ export default function App() {
                 className="w-14 h-14 rounded-full object-cover"
               />
               <div>
-                <h2 className="text-gray-800">Hey, Jacob!</h2>
-                <p className="text-sm text-gray-500">+62 812 3456 7890</p>
+                <h2 className="text-gray-800">Hey, {user.name}!</h2>
+                <p className="text-sm text-gray-500">{user.phone}</p>
               </div>
             </div>
-            <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <button 
+              onClick={handleLogout}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
               <LogOut className="w-5 h-5 text-gray-600" />
             </button>
           </div>
@@ -216,29 +252,40 @@ export default function App() {
             <h3 className="text-gray-800">Transaksi Terkini</h3>
             
             <div className="space-y-3">
-              {transactions.map((transaction) => (
-                <div
-                  key={transaction.id}
-                  className="bg-gray-50 rounded-xl p-4 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="text-gray-800">{transaction.day}</div>
-                      <div className="text-sm text-gray-500">{transaction.date}</div>
-                      <div className="text-sm text-gray-600 mt-1">{transaction.name}</div>
-                    </div>
-                    <div
-                      className={`text-lg ${
-                        transaction.type === 'masuk'
-                          ? 'text-emerald-600'
-                          : 'text-rose-600'
-                      }`}
-                    >
-                      {transaction.type === 'masuk' ? '+' : '-'} {formatCurrency(transaction.amount)}
+              {loading ? (
+                <div className="text-center py-4">
+                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+                  <p className="mt-2 text-gray-600">Memuat transaksi...</p>
+                </div>
+              ) : transactions.length === 0 ? (
+                <div className="text-center py-6">
+                  <p className="text-gray-500">Belum ada transaksi</p>
+                </div>
+              ) : (
+                transactions.map((transaction) => (
+                  <div
+                    key={transaction.id}
+                    className="bg-gray-50 rounded-xl p-4 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="text-gray-800">{transaction.day}</div>
+                        <div className="text-sm text-gray-500">{transaction.date}</div>
+                        <div className="text-sm text-gray-600 mt-1">{transaction.name}</div>
+                      </div>
+                      <div
+                        className={`text-lg ${
+                          transaction.type === 'masuk'
+                            ? 'text-emerald-600'
+                            : 'text-rose-600'
+                        }`}
+                      >
+                        {transaction.type === 'masuk' ? '+' : '-'} {formatCurrency(transaction.amount)}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { LogOut, TrendingUp, TrendingDown, Plus, Minus } from 'lucide-react';
-import exampleImage from 'figma:asset/79031c485935095e720ea9f69b24c9432ddcb1b7.png';
 import Login from './Login';
 import GoogleSheetsService from '../services/GoogleSheetsService';
 

@@ -37,5 +37,5 @@ export const GOOGLE_SHEETS_CONFIG = {
 export const getApiKey = (): string => {
   // In a real application, you would get this from environment variables
   // For now, return an empty string - this would need to be configured properly
-  return process.env.REACT_APP_GOOGLE_SHEETS_API_KEY || '';
+  return process.env.REACT_APP_GOOGLE_SHEETS_API_KEY || 'AIzaSyB5JFo6JcGj4we2WzaZWQ_1qO5d9dGAzdo';
 };

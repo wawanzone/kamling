@@ -468,9 +468,10 @@ class GoogleSheetsService {
       console.log('Transaction data fetched successfully:', data);
       const rows = data.values || [];
       
-      // Filter transactions for the current user based on phone number
+      // Map all transactions without filtering by user phone
+      // This ensures all transactions from the sheet are displayed in the "Transaksi Terkini" section
       const userTransactions = rows
-        .filter((row: string[]) => row[6] === user.phone) // Filter by phone number in column G
+        .slice(1) // Skip header row
         .map((row: string[]): Transaction => {
           // Normalize the type value to lowercase and handle case variations
           let typeValue = (row[5] || 'masuk').toLowerCase();

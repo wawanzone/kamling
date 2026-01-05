@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { LogOut, TrendingUp, TrendingDown, Plus, Minus, Table, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { Toaster } from '../components/ui/sonner';
 import Login from './Login';
 import GoogleSheetsService from '../services/GoogleSheetsService';
 import OAuthService from '../services/OAuthService';
@@ -107,7 +109,7 @@ export default function App() {
     
     const amount = parseInt(nominal);
     if (isNaN(amount) || amount <= 0) {
-      alert('Nominal harus berupa angka positif');
+      toast.error('Nominal harus berupa angka positif');
       return;
     }
     
@@ -132,9 +134,10 @@ export default function App() {
       setNominal('');
       setKeterangan('');
       console.log('Transaction saved successfully and data synced from Google Sheets');
+      toast.success('Transaksi berhasil disimpan!');
     } else {
       console.error('Failed to save transaction');
-      alert('Gagal menyimpan transaksi');
+      toast.error('Gagal menyimpan transaksi!');
     }
   };
 
@@ -159,12 +162,6 @@ export default function App() {
           {/* Header Section */}
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-              </div>
               <div>
                 <h2 className="text-gray-800">Hey, {user.name}!</h2>
                 <p className="text-sm text-gray-500">{user.phone}</p>
@@ -398,5 +395,6 @@ export default function App() {
         </div>
       )}
     </div>
+    <Toaster position="top-center" />
   );
 }

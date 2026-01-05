@@ -539,6 +539,114 @@ class GoogleSheetsService {
       return false;
     }
   }
+
+  // Get all users from the Google Sheets
+  async getAllUsers(): Promise<User[]> {
+    try {
+      console.log('Fetching all users from Google Sheets...');
+      
+      // Check if the Users sheet exists
+      const sheetExists = await this.verifySheetExists(GOOGLE_SHEETS_CONFIG.SHEETS.USERS);
+      if (!sheetExists) {
+        console.warn(`Users sheet does not exist. Returning empty array.`);
+        return [];
+      }
+      
+      // Fetch all users from the Users sheet
+      const response = await fetch(
+        `${GOOGLE_SHEETS_CONFIG.API_BASE_URL}/${this.SPREADSHEET_ID}/values/${GOOGLE_SHEETS_CONFIG.SHEETS.USERS}!A1:C?key=${this.API_KEY}`
+      );
+      
+      console.log('Get all users response status:', response.status);
+      
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          console.warn('Read operations require proper authentication. Returning empty array.');
+          return [];
+        }
+        // For 400 errors, get more details
+        if (response.status === 400) {
+          const errorText = await response.text();
+          console.error('Bad Request details:', errorText);
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('All users data fetched successfully:', data);
+      const rows = data.values || [];
+      
+      // Skip the header row and map to User objects
+      const users = rows.slice(1).map((row: string[]): User => {
+        return {
+          name: row[0] || '',
+          phone: row[1] || ''
+        };
+      });
+      
+      console.log('All users processed:', users);
+      return users;
+    } catch (error) {
+      console.error('Error fetching all users:', error);
+      return [];
+    }
+  }
+
+  // Get all transactions from the Google Sheets
+  async getAllTransactions(): Promise<Transaction[]> {
+    try {
+      console.log('Fetching all transactions from Google Sheets...');
+      
+      // Check if the Transactions sheet exists
+      const sheetExists = await this.verifySheetExists(GOOGLE_SHEETS_CONFIG.SHEETS.TRANSACTIONS);
+      if (!sheetExists) {
+        console.warn(`Transactions sheet does not exist. Returning empty array.`);
+        return [];
+      }
+      
+      // Fetch all transactions from the Transactions sheet
+      const response = await fetch(
+        `${GOOGLE_SHEETS_CONFIG.API_BASE_URL}/${this.SPREADSHEET_ID}/values/${GOOGLE_SHEETS_CONFIG.SHEETS.TRANSACTIONS}!A1:G?key=${this.API_KEY}`
+      );
+      
+      console.log('Get all transactions response status:', response.status);
+      
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          console.warn('Read operations require proper authentication. Returning empty array.');
+          return [];
+        }
+        // For 400 errors, get more details
+        if (response.status === 400) {
+          const errorText = await response.text();
+          console.error('Bad Request details:', errorText);
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('All transactions data fetched successfully:', data);
+      const rows = data.values || [];
+      
+      // Skip the header row and map to Transaction objects
+      const transactions = rows.slice(1).map((row: string[]): Transaction => {
+        return {
+          id: parseInt(row[0]) || Date.now(),
+          date: row[1] || '',
+          day: row[2] || '',
+          name: row[3] || '',
+          amount: parseInt(row[4]) || 0,
+          type: row[5] as 'masuk' | 'keluar' || 'masuk'
+        };
+      });
+      
+      console.log('All transactions processed:', transactions);
+      return transactions;
+    } catch (error) {
+      console.error('Error fetching all transactions:', error);
+      return [];
+    }
+  }
 }
 
 export default new GoogleSheetsService();

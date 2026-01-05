@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { LogOut, TrendingUp, TrendingDown, Plus, Minus } from 'lucide-react';
+import { LogOut, TrendingUp, TrendingDown, Plus, Minus, Table, X } from 'lucide-react';
 import Login from './Login';
 import GoogleSheetsService from '../services/GoogleSheetsService';
 import OAuthService from '../services/OAuthService';
+import GoogleSheetsDataDisplay from './components/data-display/GoogleSheetsDataDisplay';
 
 interface Transaction {
   id: number;
@@ -25,6 +26,7 @@ export default function App() {
   const [keterangan, setKeterangan] = useState('');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showDataDisplay, setShowDataDisplay] = useState(false);
 
   // Process OAuth callback if present in URL
   useEffect(() => {
@@ -73,11 +75,17 @@ export default function App() {
     return <Login onLogin={handleLogin} />;
   }
 
-  // Mock data for totals
-  const totalKamling = 4586000;
-  const lastMonthChange = 12.5; // percentage
-  const totalMasuk = 2450000;
-  const totalKeluar = 710000;
+  // Calculate totals from actual transactions
+  const totalMasuk = transactions
+    .filter(t => t.type === 'masuk')
+    .reduce((sum, t) => sum + t.amount, 0);
+  
+  const totalKeluar = transactions
+    .filter(t => t.type === 'keluar')
+    .reduce((sum, t) => sum + t.amount, 0);
+  
+  const totalKamling = totalMasuk - totalKeluar;
+  const lastMonthChange = 12.5; // percentage (could be calculated based on previous period)
 
   const handleSave = async () => {
     if (!nominal || !user) return;
@@ -137,12 +145,21 @@ export default function App() {
                 <p className="text-sm text-gray-500">{user.phone}</p>
               </div>
             </div>
-            <button 
-              onClick={handleLogout}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <LogOut className="w-5 h-5 text-gray-600" />
-            </button>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setShowDataDisplay(!showDataDisplay)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                title={showDataDisplay ? "Tutup Data" : "Lihat Semua Data"}
+              >
+                {showDataDisplay ? <X className="w-5 h-5 text-gray-600" /> : <Table className="w-5 h-5 text-gray-600" />}
+              </button>
+              <button 
+                onClick={handleLogout}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <LogOut className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
           </div>
 
           {/* Date */}
@@ -307,6 +324,26 @@ export default function App() {
           </div>
         </div>
       </div>
+      
+      {/* Google Sheets Data Display Modal */}
+      {showDataDisplay && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-gray-800">Data dari Google Sheets</h2>
+                <button 
+                  onClick={() => setShowDataDisplay(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+              <GoogleSheetsDataDisplay />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

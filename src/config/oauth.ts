@@ -7,8 +7,7 @@ export const GOOGLE_OAUTH_CONFIG = {
   
   // Scopes required for Google Sheets access
   SCOPES: [
-    'https://www.googleapis.com/auth/spreadsheets',
-    'https://www.googleapis.com/auth/drive.file'
+    'https://www.googleapis.com/auth/spreadsheets'
   ].join(' '),
   
   // OAuth 2.0 endpoints

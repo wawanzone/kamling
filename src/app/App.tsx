@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { LogOut, TrendingUp, TrendingDown, Plus, Minus, Table, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { Toaster } from '../components/ui/sonner';
+import { Toaster } from './components/ui/sonner';
 import Login from './Login';
 import GoogleSheetsService from '../services/GoogleSheetsService';
 import OAuthService from '../services/OAuthService';

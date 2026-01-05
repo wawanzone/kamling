@@ -92,11 +92,11 @@ export default function App() {
 
   // Calculate totals from actual transactions
   const totalMasuk = transactions
-    .filter(t => t.type === 'masuk')
+    .filter(t => t.type === 'masuk')  // 'masuk' means income (green)
     .reduce((sum, t) => sum + t.amount, 0);
   
   const totalKeluar = transactions
-    .filter(t => t.type === 'keluar')
+    .filter(t => t.type === 'keluar')  // 'keluar' means expenses (red)
     .reduce((sum, t) => sum + t.amount, 0);
   
   const totalKamling = totalMasuk - totalKeluar;

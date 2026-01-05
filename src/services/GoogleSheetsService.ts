@@ -102,9 +102,18 @@ class GoogleSheetsService {
         await this.addUserToSheet(user);
       }
       
+      // Always add to local storage as backup
+      this.addLocalUser(user);
+      
       return true;
     } catch (error) {
       console.error('Error initializing user:', error);
+      // Still try to save to local storage even if there's an error
+      try {
+        this.addLocalUser(user);
+      } catch (localError) {
+        console.error('Error saving user locally:', localError);
+      }
       return false;
     }
   }
@@ -199,10 +208,8 @@ class GoogleSheetsService {
       if (OAuthService.isAuthenticated() && !OAuthService.isTokenExpired()) {
         headers['Authorization'] = `Bearer ${OAuthService.getAccessToken()}`;
       } else {
-        // If no OAuth token, try with API key but this likely won't work for write operations
-        // In this case, we'll use OAuth flow to get a token
-        console.warn('No valid OAuth token available for write operation');
-        // For now, add to local storage as fallback
+        // If no OAuth token, add to local storage as fallback and return
+        console.warn('No valid OAuth token available for write operation. Data saved locally only.');
         this.addLocalUser(user);
         return;
       }
@@ -250,9 +257,18 @@ class GoogleSheetsService {
     try {
       // Add transaction to the transactions sheet
       await this.addTransactionToSheet(transaction, user);
+      
+      // Always save to local storage as backup
+      this.addLocalTransaction(transaction);
       return true;
     } catch (error) {
       console.error('Error saving transaction:', error);
+      // Still try to save to local storage even if there's an error
+      try {
+        this.addLocalTransaction(transaction);
+      } catch (localError) {
+        console.error('Error saving transaction locally:', localError);
+      }
       return false;
     }
   }
@@ -297,10 +313,8 @@ class GoogleSheetsService {
       if (OAuthService.isAuthenticated() && !OAuthService.isTokenExpired()) {
         headers['Authorization'] = `Bearer ${OAuthService.getAccessToken()}`;
       } else {
-        // If no OAuth token, try with API key but this likely won't work for write operations
-        // In this case, we'll use OAuth flow to get a token
-        console.warn('No valid OAuth token available for write operation');
-        // For now, continue without throwing error to allow app to function
+        // If no OAuth token, return without error to allow app to continue
+        console.warn('No valid OAuth token available for write operation. Data saved locally only.');
         return;
       }
       

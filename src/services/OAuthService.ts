@@ -24,6 +24,11 @@ class OAuthService {
     return !!this.accessToken;
   }
 
+  // Check if OAuth is properly configured
+  public isConfigured(): boolean {
+    return !!GOOGLE_OAUTH_CONFIG.CLIENT_ID;
+  }
+
   // Get the current access token
   public getAccessToken(): string | null {
     return this.accessToken;

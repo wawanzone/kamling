@@ -44,6 +44,21 @@ export default function App() {
     }
   }, []);
 
+  // Check OAuth status
+  const isOAuthConfigured = OAuthService.isConfigured();
+  const isOAuthAuthenticated = OAuthService.isAuthenticated();
+  const isOAuthTokenExpired = isOAuthAuthenticated && OAuthService.isTokenExpired();
+
+  // Function to initiate OAuth flow
+  const initiateOAuth = () => {
+    if (!isOAuthConfigured) {
+      alert('Google OAuth is not properly configured. Please set VITE_GOOGLE_CLIENT_ID in your environment variables.');
+      return;
+    }
+    const authUrl = OAuthService.getAuthorizationUrl();
+    window.location.href = authUrl;
+  };
+
   // Load transactions when user logs in
   useEffect(() => {
     const loadTransactions = async () => {
@@ -146,6 +161,34 @@ export default function App() {
               </div>
             </div>
             <div className="flex gap-2">
+              {/* OAuth Status Indicator */}
+              <div className="flex items-center">
+                {!isOAuthConfigured ? (
+                  <div className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
+                    OAuth Not Configured
+                  </div>
+                ) : isOAuthTokenExpired ? (
+                  <button 
+                    onClick={initiateOAuth}
+                    className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full hover:bg-yellow-200 transition-colors"
+                    title="OAuth token expired, click to renew"
+                  >
+                    OAuth Expired
+                  </button>
+                ) : isOAuthAuthenticated ? (
+                  <div className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                    OAuth OK
+                  </div>
+                ) : (
+                  <button 
+                    onClick={initiateOAuth}
+                    className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full hover:bg-blue-200 transition-colors"
+                    title="Click to authenticate with Google Sheets"
+                  >
+                    OAuth Needed
+                  </button>
+                )}
+              </div>
               <button 
                 onClick={() => setShowDataDisplay(!showDataDisplay)}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"

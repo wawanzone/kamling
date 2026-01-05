@@ -20,8 +20,11 @@ Run `npm run dev` to start the development server.
 This application uses Google Sheets as a backend database. To set it up:
 
 1. Follow the instructions in [GOOGLE_SHEETS_INTEGRATION.md](./GOOGLE_SHEETS_INTEGRATION.md)
-2. Create a `.env` file based on `.env.example`
-3. Add your Google Sheets API key to the `.env` file
+2. For read-only operations, an API key is sufficient
+3. For write operations (adding users and transactions), OAuth 2.0 authentication is required
+4. Follow the OAuth setup guide in [OAUTH_SETUP.md](./OAUTH_SETUP.md) to configure OAuth credentials
+5. Create a `.env` file based on `.env.example`
+6. Add your Google Sheets API key and OAuth Client ID to the `.env` file
 
 ## Usage
 

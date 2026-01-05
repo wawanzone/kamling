@@ -2,10 +2,12 @@
   "name": "@figma/my-make-file",
   "private": true,
   "version": "0.0.1",
+  "description": "Mobile Financial Tracking App with Google Sheets integration. Requires OAuth 2.0 for full functionality.",
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "setup": "echo 'Please set up your environment variables as described in .env.example and OAUTH_NEEDED.md'"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

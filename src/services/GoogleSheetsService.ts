@@ -472,13 +472,21 @@ class GoogleSheetsService {
       const userTransactions = rows
         .filter((row: string[]) => row[6] === user.phone) // Filter by phone number in column G
         .map((row: string[]): Transaction => {
+          // Normalize the type value to lowercase and handle case variations
+          let typeValue = (row[5] || 'masuk').toLowerCase();
+          if (typeValue === 'masuk' || typeValue === 'income' || typeValue === 'in') {
+            typeValue = 'masuk';
+          } else if (typeValue === 'keluar' || typeValue === 'expense' || typeValue === 'out') {
+            typeValue = 'keluar';
+          }
+          
           return {
             id: parseInt(row[0]) || Date.now(),
             date: row[1] || '',
             day: row[2] || '',
             name: row[3] || user.name,
             amount: parseInt(row[4]) || 0,
-            type: row[5] as 'masuk' | 'keluar' || 'masuk'
+            type: typeValue as 'masuk' | 'keluar' || 'masuk'
           };
         })
         .reverse(); // Reverse to show newest first
@@ -644,13 +652,21 @@ class GoogleSheetsService {
       
       // Skip the header row and map to Transaction objects
       const transactions = rows.slice(1).map((row: string[]): Transaction => {
+        // Normalize the type value to lowercase and handle case variations
+        let typeValue = (row[5] || 'masuk').toLowerCase();
+        if (typeValue === 'masuk' || typeValue === 'income' || typeValue === 'in') {
+          typeValue = 'masuk';
+        } else if (typeValue === 'keluar' || typeValue === 'expense' || typeValue === 'out') {
+          typeValue = 'keluar';
+        }
+        
         return {
           id: parseInt(row[0]) || Date.now(),
           date: row[1] || '',
           day: row[2] || '',
           name: row[3] || '',
           amount: parseInt(row[4]) || 0,
-          type: row[5] as 'masuk' | 'keluar' || 'masuk'
+          type: typeValue as 'masuk' | 'keluar' || 'masuk'
         };
       });
       

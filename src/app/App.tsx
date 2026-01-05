@@ -161,34 +161,7 @@ export default function App() {
               </div>
             </div>
             <div className="flex gap-2">
-              {/* OAuth Status Indicator */}
-              <div className="flex items-center">
-                {!isOAuthConfigured ? (
-                  <div className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full" title="OAuth tidak terkonfigurasi, silakan atur VITE_GOOGLE_CLIENT_ID di environment variables">
-                    OAuth Not Configured
-                  </div>
-                ) : isOAuthTokenExpired ? (
-                  <button 
-                    onClick={initiateOAuth}
-                    className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full hover:bg-yellow-200 transition-colors"
-                    title="Token OAuth telah kedaluwarsa, klik untuk memperbarui"
-                  >
-                    OAuth Expired
-                  </button>
-                ) : isOAuthAuthenticated ? (
-                  <div className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full" title="OAuth terkonfigurasi dan terotentikasi">
-                    OAuth OK
-                  </div>
-                ) : (
-                  <button 
-                    onClick={initiateOAuth}
-                    className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full hover:bg-blue-200 transition-colors"
-                    title="Klik untuk mengautentikasi dengan Google Sheets"
-                  >
-                    OAuth Needed
-                  </button>
-                )}
-              </div>
+              {/* Show Data Button */}
               <button 
                 onClick={() => setShowDataDisplay(!showDataDisplay)}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"

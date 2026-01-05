@@ -88,8 +88,6 @@ export default function GoogleSheetsDataDisplay() {
 
   return (
     <div className="bg-white rounded-3xl shadow-lg p-6 space-y-6">
-      <h2 className="text-xl font-bold text-gray-800">Data dari Google Sheets</h2>
-      
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-blue-400 to-blue-500 rounded-2xl p-4 text-white shadow-md">

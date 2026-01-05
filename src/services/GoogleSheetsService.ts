@@ -489,7 +489,7 @@ class GoogleSheetsService {
             type: typeValue as 'masuk' | 'keluar' || 'masuk'
           };
         })
-        .reverse(); // Reverse to show newest first
+        .sort((a, b) => b.id - a.id); // Sort by ID (timestamp) in descending order (newest first)
       
       console.log('User transactions filtered:', userTransactions);
       return userTransactions;
@@ -669,6 +669,9 @@ class GoogleSheetsService {
           type: typeValue as 'masuk' | 'keluar' || 'masuk'
         };
       });
+
+      // Sort transactions by ID (timestamp) in descending order (newest first)
+      transactions.sort((a, b) => b.id - a.id);
       
       console.log('All transactions processed:', transactions);
       return transactions;

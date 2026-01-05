@@ -125,12 +125,13 @@ export default function App() {
     const success = await GoogleSheetsService.saveTransaction(newTransaction, user);
     
     if (success) {
-      // Add to local state
-      setTransactions(prev => [newTransaction, ...prev]);
+      // Reload transactions from Google Sheets to ensure sync
+      const userTransactions = await GoogleSheetsService.getTransactions(user);
+      setTransactions(userTransactions);
       // Clear form
       setNominal('');
       setKeterangan('');
-      console.log('Transaction saved successfully');
+      console.log('Transaction saved successfully and data synced from Google Sheets');
     } else {
       console.error('Failed to save transaction');
       alert('Gagal menyimpan transaksi');
@@ -139,6 +140,15 @@ export default function App() {
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID').format(amount);
+  };
+
+  const handleRefresh = async () => {
+    if (user) {
+      setLoading(true);
+      const userTransactions = await GoogleSheetsService.getTransactions(user);
+      setTransactions(userTransactions);
+      setLoading(false);
+    }
   };
 
   return (
@@ -317,7 +327,16 @@ export default function App() {
 
           {/* Recent Transactions Section */}
           <div className="space-y-3">
-            <h3 className="text-gray-800">Transaksi Terkini</h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-gray-800">Transaksi Terkini</h3>
+              <button 
+                onClick={handleRefresh}
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                title="Refresh data dari Google Sheets"
+              >
+                Refresh
+              </button>
+            </div>
             
             <div className="space-y-3 max-h-64 overflow-y-auto">
               {loading ? (
@@ -330,7 +349,7 @@ export default function App() {
                   <p className="text-gray-500">Belum ada transaksi</p>
                 </div>
               ) : (
-                transactions.slice(0, 10).map((transaction) => (  // Show only first 10 transactions
+                transactions.slice(0, 10).map((transaction) => (  // Show only 10 most recent transactions
                   <div
                     key={transaction.id}
                     className="bg-gray-50 rounded-xl p-4 hover:shadow-md transition-shadow"

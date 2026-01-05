@@ -8,6 +8,9 @@ This is a code bundle for Mobile Financial Tracking App. The original project is
 - Google Sheets integration for data storage
 - Transaction tracking (income and expenses)
 - Real-time data synchronization
+- Dashboard with financial overview
+- OAuth 2.0 authentication for secure access
+- Clear visual indicators: green for income, red for expenses
 
 ## Running the code
 
@@ -31,3 +34,7 @@ This application uses Google Sheets as a backend database. To set it up:
 1. On first visit, you'll be prompted to enter your name and phone number
 2. After login, you can track your income and expenses
 3. All data is stored in your Google Sheet and synchronized in real-time
+4. Dashboard displays financial summary with clear visual indicators:
+   - Green color for income transactions
+   - Red color for expense transactions
+   - Status indicator for Google Sheets synchronization

@@ -164,26 +164,26 @@ export default function App() {
               {/* OAuth Status Indicator */}
               <div className="flex items-center">
                 {!isOAuthConfigured ? (
-                  <div className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
+                  <div className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full" title="OAuth tidak terkonfigurasi, silakan atur VITE_GOOGLE_CLIENT_ID di environment variables">
                     OAuth Not Configured
                   </div>
                 ) : isOAuthTokenExpired ? (
                   <button 
                     onClick={initiateOAuth}
                     className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full hover:bg-yellow-200 transition-colors"
-                    title="OAuth token expired, click to renew"
+                    title="Token OAuth telah kedaluwarsa, klik untuk memperbarui"
                   >
                     OAuth Expired
                   </button>
                 ) : isOAuthAuthenticated ? (
-                  <div className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                  <div className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full" title="OAuth terkonfigurasi dan terotentikasi">
                     OAuth OK
                   </div>
                 ) : (
                   <button 
                     onClick={initiateOAuth}
                     className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full hover:bg-blue-200 transition-colors"
-                    title="Click to authenticate with Google Sheets"
+                    title="Klik untuk mengautentikasi dengan Google Sheets"
                   >
                     OAuth Needed
                   </button>
@@ -207,7 +207,7 @@ export default function App() {
 
           {/* Date */}
           <div className="text-sm text-gray-600">
-            Malam Jumat, 1 Jan 2026
+            {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </div>
 
           {/* Summary Section */}
@@ -229,6 +229,24 @@ export default function App() {
                 </>
               )}
               <span className="text-gray-500">dari bulan lalu</span>
+            </div>
+            
+            {/* Integration Status Indicator */}
+            <div className="mt-3">
+              <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs ${
+                isOAuthConfigured && isOAuthAuthenticated && !isOAuthTokenExpired 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-yellow-100 text-yellow-800'
+              }`}>
+                <div className={`w-2 h-2 rounded-full mr-2 ${
+                  isOAuthConfigured && isOAuthAuthenticated && !isOAuthTokenExpired 
+                    ? 'bg-green-500' 
+                    : 'bg-yellow-500'
+                }`}></div>
+                {isOAuthConfigured && isOAuthAuthenticated && !isOAuthTokenExpired 
+                  ? 'Sinkronisasi Aktif' 
+                  : 'Sinkronisasi Terbatas'}
+              </div>
             </div>
           </div>
 
@@ -328,7 +346,7 @@ export default function App() {
           <div className="space-y-3">
             <h3 className="text-gray-800">Transaksi Terkini</h3>
             
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-64 overflow-y-auto">
               {loading ? (
                 <div className="text-center py-4">
                   <div className="inline-block animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
@@ -339,7 +357,7 @@ export default function App() {
                   <p className="text-gray-500">Belum ada transaksi</p>
                 </div>
               ) : (
-                transactions.map((transaction) => (
+                transactions.slice(0, 10).map((transaction) => (  // Show only first 10 transactions
                   <div
                     key={transaction.id}
                     className="bg-gray-50 rounded-xl p-4 hover:shadow-md transition-shadow"
@@ -351,7 +369,7 @@ export default function App() {
                         <div className="text-sm text-gray-600 mt-1">{transaction.name}</div>
                       </div>
                       <div
-                        className={`text-lg ${
+                        className={`text-lg font-semibold ${
                           transaction.type === 'masuk'
                             ? 'text-emerald-600'
                             : 'text-rose-600'

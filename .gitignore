@@ -1,1 +1,4 @@
-Nothing should be ignored based on the provided file changes. The only added file is `oauth-setup-guide.md`, which is a markdown documentation file and should be tracked in version control.
+```
+.env.local
+.env.*
+```

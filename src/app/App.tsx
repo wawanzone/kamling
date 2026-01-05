@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { LogOut, TrendingUp, TrendingDown, Plus, Minus } from 'lucide-react';
 import Login from './Login';
 import GoogleSheetsService from '../services/GoogleSheetsService';
+import OAuthService from '../services/OAuthService';
 
 interface Transaction {
   id: number;
@@ -24,6 +25,22 @@ export default function App() {
   const [keterangan, setKeterangan] = useState('');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Process OAuth callback if present in URL
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.includes('access_token')) {
+      // Process the OAuth callback
+      const success = OAuthService.processCallback(hash);
+      if (success) {
+        console.log('OAuth authentication successful');
+        // Remove the hash from URL to prevent reprocessing
+        window.location.hash = '';
+      } else {
+        console.error('OAuth authentication failed');
+      }
+    }
+  }, []);
 
   // Load transactions when user logs in
   useEffect(() => {

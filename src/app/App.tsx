@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 import { Toaster } from './components/ui/sonner';
 import Login from './Login';
 import GoogleSheetsService from '../services/GoogleSheetsService';
-import OAuthService from '../services/OAuthService';
 import GoogleSheetsDataDisplay from './components/data-display/GoogleSheetsDataDisplay';
 
 interface Transaction {
@@ -30,37 +29,6 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [showDataDisplay, setShowDataDisplay] = useState(false);
 
-  // Process OAuth callback if present in URL
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (hash && hash.includes('access_token')) {
-      // Process the OAuth callback
-      const success = OAuthService.processCallback(hash);
-      if (success) {
-        console.log('OAuth authentication successful');
-        // Remove the hash from URL to prevent reprocessing
-        window.location.hash = '';
-      } else {
-        console.error('OAuth authentication failed');
-      }
-    }
-  }, []);
-
-  // Check OAuth status
-  const isOAuthConfigured = OAuthService.isConfigured();
-  const isOAuthAuthenticated = OAuthService.isAuthenticated();
-  const isOAuthTokenExpired = isOAuthAuthenticated && OAuthService.isTokenExpired();
-
-  // Function to initiate OAuth flow
-  const initiateOAuth = () => {
-    if (!isOAuthConfigured) {
-      alert('Google OAuth is not properly configured. Please set VITE_GOOGLE_CLIENT_ID in your environment variables.');
-      return;
-    }
-    const authUrl = OAuthService.getAuthorizationUrl();
-    window.location.href = authUrl;
-  };
-
   // Load transactions when user logs in
   useEffect(() => {
     const loadTransactions = async () => {
@@ -71,14 +39,14 @@ export default function App() {
         setLoading(false);
       }
     };
-    
+
     loadTransactions();
   }, [user]);
 
   const handleLogin = async (name: string, phone: string) => {
     const userObj = { name, phone };
     setUser(userObj);
-    
+
     // Initialize user in Google Sheets
     await GoogleSheetsService.initializeUser(userObj);
   };
@@ -96,45 +64,51 @@ export default function App() {
   const totalMasuk = transactions
     .filter(t => t.type === 'masuk')  // 'masuk' means income (green)
     .reduce((sum, t) => sum + t.amount, 0);
-  
+
   const totalKeluar = transactions
     .filter(t => t.type === 'keluar')  // 'keluar' means expenses (red)
     .reduce((sum, t) => sum + t.amount, 0);
-  
+
   const totalKamling = totalMasuk - totalKeluar;
   const lastMonthChange = 12.5; // percentage (could be calculated based on previous period)
 
   const handleSave = async () => {
     if (!nominal || !user) return;
-    
+
     const amount = parseInt(nominal);
     if (isNaN(amount) || amount <= 0) {
       toast.error('Nominal harus berupa angka positif');
       return;
     }
-    
+
     // Create transaction object
     const newTransaction: Transaction = {
-      id: Date.now(), // Using timestamp as ID for now
+      id: Date.now(),
       date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
       day: new Date().toLocaleDateString('id-ID', { weekday: 'long' }),
       name: user.name,
       amount: amount,
       type: activeTab
     };
-    
+
     // Save to Google Sheets
-    const success = await GoogleSheetsService.saveTransaction(newTransaction, user);
-    
-    if (success) {
-      // Reload transactions from Google Sheets to ensure sync
-      const userTransactions = await GoogleSheetsService.getTransactions(user);
-      setTransactions(userTransactions);
+    const { success, data } = await GoogleSheetsService.saveTransaction(newTransaction, user);
+
+    if (success && data) {
+      // Update local state immediately with confirmed data
+      setTransactions(prev => [...prev, data]);
+      
       // Clear form
       setNominal('');
       setKeterangan('');
-      console.log('Transaction saved successfully and data synced from Google Sheets');
+      console.log('Transaction saved successfully');
       toast.success('Transaksi berhasil disimpan!');
+      
+      // Background refresh to ensure consistency
+      GoogleSheetsService.getTransactions(user).then(userTransactions => {
+        setTransactions(userTransactions);
+        console.log('Data synced with Google Sheets');
+      });
     } else {
       console.error('Failed to save transaction');
       toast.error('Gagal menyimpan transaksi!');
@@ -170,14 +144,14 @@ export default function App() {
               </div>
               <div className="flex gap-2">
                 {/* Show Data Button */}
-                <button 
+                <button
                   onClick={() => setShowDataDisplay(!showDataDisplay)}
                   className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                   title={showDataDisplay ? "Tutup Data" : "Lihat Semua Data"}
                 >
                   {showDataDisplay ? <X className="w-5 h-5 text-gray-600" /> : <Table className="w-5 h-5 text-gray-600" />}
                 </button>
-                <button 
+                <button
                   onClick={handleLogout}
                   className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                 >
@@ -211,22 +185,12 @@ export default function App() {
                 )}
                 <span className="text-gray-500">dari bulan lalu</span>
               </div>
-              
+
               {/* Integration Status Indicator */}
               <div className="mt-3">
-                <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs ${
-                  isOAuthConfigured && isOAuthAuthenticated && !isOAuthTokenExpired 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                  <div className={`w-2 h-2 rounded-full mr-2 ${
-                    isOAuthConfigured && isOAuthAuthenticated && !isOAuthTokenExpired 
-                      ? 'bg-green-500' 
-                      : 'bg-yellow-500'
-                  }`}></div>
-                  {isOAuthConfigured && isOAuthAuthenticated && !isOAuthTokenExpired 
-                    ? 'Sinkronisasi Aktif' 
-                    : 'Sinkronisasi Terbatas'}
+                <div className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                  <div className="w-2 h-2 rounded-full mr-2 bg-green-500"></div>
+                  Mode Offline / Lokal
                 </div>
               </div>
             </div>
@@ -262,21 +226,19 @@ export default function App() {
               <div className="flex bg-gray-100 rounded-xl p-1">
                 <button
                   onClick={() => setActiveTab('masuk')}
-                  className={`flex-1 py-2 px-4 rounded-lg transition-all ${
-                    activeTab === 'masuk'
+                  className={`flex-1 py-2 px-4 rounded-lg transition-all ${activeTab === 'masuk'
                       ? 'bg-white shadow-sm text-emerald-600'
                       : 'text-gray-600'
-                  }`}
+                    }`}
                 >
                   Masuk
                 </button>
                 <button
                   onClick={() => setActiveTab('keluar')}
-                  className={`flex-1 py-2 px-4 rounded-lg transition-all ${
-                    activeTab === 'keluar'
+                  className={`flex-1 py-2 px-4 rounded-lg transition-all ${activeTab === 'keluar'
                       ? 'bg-white shadow-sm text-rose-600'
                       : 'text-gray-600'
-                  }`}
+                    }`}
                 >
                   Keluar
                 </button>
@@ -312,11 +274,10 @@ export default function App() {
 
                 <button
                   onClick={handleSave}
-                  className={`w-full py-3 rounded-xl text-white shadow-md transition-all ${
-                    activeTab === 'masuk'
+                  className={`w-full py-3 rounded-xl text-white shadow-md transition-all ${activeTab === 'masuk'
                       ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700'
                       : 'bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700'
-                  }`}
+                    }`}
                 >
                   Simpan
                 </button>
@@ -327,7 +288,7 @@ export default function App() {
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <h3 className="text-gray-800">Transaksi Terkini</h3>
-                <button 
+                <button
                   onClick={handleRefresh}
                   className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                   title="Refresh data dari Google Sheets"
@@ -335,7 +296,7 @@ export default function App() {
                   Refresh
                 </button>
               </div>
-              
+
               <div className="space-y-3 max-h-64 overflow-y-auto">
                 {loading ? (
                   <div className="text-center py-4">
@@ -359,11 +320,10 @@ export default function App() {
                           <div className="text-sm text-gray-600 mt-1">{transaction.name}</div>
                         </div>
                         <div
-                          className={`text-lg font-semibold ${
-                            transaction.type === 'masuk'
+                          className={`text-lg font-semibold ${transaction.type === 'masuk'
                               ? 'text-emerald-600'
                               : 'text-rose-600'
-                          }`}
+                            }`}
                         >
                           {transaction.type === 'masuk' ? '+' : '-'} {formatCurrency(transaction.amount)}
                         </div>
@@ -375,7 +335,7 @@ export default function App() {
             </div>
           </div>
         </div>
-        
+
         {/* Google Sheets Data Display Modal */}
         {showDataDisplay && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -383,7 +343,7 @@ export default function App() {
               <div className="p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-bold text-gray-800">Data dari Google Sheets</h2>
-                  <button 
+                  <button
                     onClick={() => setShowDataDisplay(false)}
                     className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                   >

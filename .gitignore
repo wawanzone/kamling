@@ -1,1 +1,2 @@
-Nothing to output - the modified file 'src/app/App.tsx' is a source code file and no build artifacts, dependencies, or temporary files were detected in the changes.
+node_modules
+.env
